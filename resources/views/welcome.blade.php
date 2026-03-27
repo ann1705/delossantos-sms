@@ -21,10 +21,23 @@
                 </p>
 
                 <div class="pt-6">
+                    @auth
+                        @if(auth()->user()->role === 'admin')
+                            <div class="bg-red-50 border-2 border-red-300 rounded-xl p-4 inline-block">
+                                <p class="text-sm font-bold text-red-700">❌ Admin accounts cannot apply for scholarships</p>
+                            </div>
+                        @else
+                            <a href="{{ route('applications.create') }}"
+                            class="inline-block bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold px-10 py-4 rounded-xl shadow-lg transition">
+                                Apply Now
+                            </a>
+                        @endif
+                    @else
                     <a href="{{ route('register') }}"
                     class="inline-block bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold px-10 py-4 rounded-xl shadow-lg transition">
                         Apply Now
                     </a>
+                    @endauth
                 </div>
             </div>
 

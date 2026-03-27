@@ -2,72 +2,319 @@
 
 @section('content')
 <div class="min-h-screen bg-indigo-50/50 py-10 px-4 mt-10">
-    <div class="max-w-2xl mx-auto">
+    <div class="max-w-4xl mx-auto">
 
-        <div class="bg-white rounded-t-xl shadow-md border-t-[10px] border-blue-700 overflow-hidden mb-4">
-            <div class="p-8">
-                <h1 class="text-4xl font-normal text-gray-900 mb-4">Scholarship Application Form</h1>
-                <p class="text-sm text-gray-700 mb-4">Please fill out this form to apply for the scholarship. Fields marked with <span class="text-red-600">*</span> are required.</p>
-                <hr class="border-gray-200">
-                <div class="mt-4 flex items-center text-sm font-bold text-gray-600">
-                    {{ Auth::user()->email }} <span class="ml-2 text-blue-600 font-normal underline cursor-not-allowed">Logged in</span>
-                </div>
-            </div>
-        </div>
-
-        <form action="{{ route('applications.store') }}" method="POST" class="space-y-4">
+        <form action="{{ route('applications.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
 
-            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
-                <label class="block text-base font-medium text-gray-900 mb-6">
-                    Full Name <span class="text-red-600">*</span>
-                </label>
-                <input type="text" name="student_name" required value="{{ Auth::user()->name }}"
-                    class="w-full border-b border-gray-300 focus:border-blue-600 focus:outline-none py-2 text-gray-800 transition-all text-lg">
-                <p class="text-xs text-gray-400 mt-2">Enter your legal name as it appears on school records.</p>
-            </div>
-
-            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
-                <label class="block text-base font-medium text-gray-900 mb-6">
-                    What is your current Course? <span class="text-red-600">*</span>
-                </label>
-                <div class="space-y-4">
-                    @foreach(['BSIT', 'BSCS', 'BSHM', 'BSBA'] as $course)
-                    <label class="flex items-center cursor-pointer group">
-                        <input type="radio" name="course" value="{{ $course }}" required class="w-5 h-5 text-blue-600 border-gray-300 focus:ring-blue-500">
-                        <span class="ml-3 text-gray-700 group-hover:text-blue-600 transition">{{ $course }}</span>
-                    </label>
-                    @endforeach
-                </div>
-            </div>
-
-            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
-                <label class="block text-base font-medium text-gray-900 mb-6">
-                    Latest General Weighted Average (GWA) <span class="text-red-600">*</span>
-                </label>
-                <input type="number" step="0.01" name="gwa" required placeholder="e.g. 1.50"
-                    class="w-48 border-b border-gray-300 focus:border-blue-600 focus:outline-none py-2 text-gray-800 transition-all text-lg">
-            </div>
-
-            <div class="flex justify-between items-center py-6">
-                <button type="submit"
-                        class="bg-blue-700 text-white px-8 py-2.5 rounded font-medium hover:bg-blue-800 transition shadow-md active:scale-95">
-                    Submit
-                </button>
-                <div class="flex items-center space-x-2">
-                    <div class="w-32 bg-gray-200 h-2 rounded overflow-hidden">
-                        <div class="bg-blue-700 h-2 rounded w-full"></div>
+            <div class="bg-white rounded-t-xl shadow-md border-t-[10px] border-blue-700 p-8 mb-6">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-6 mb-6">
+                    <div class="w-24 h-24 flex items-center justify-center">
+                        <img src="{{ asset('images/ched.png') }}" alt="CHED" class="max-h-full max-w-full object-contain">
                     </div>
-                    <span class="text-xs text-gray-500 font-medium tracking-tight">100% completed</span>
+
+                    <div class="text-center flex-1">
+                        <h1 class="text-3xl font-black text-gray-900 mb-1 uppercase tracking-tighter">Scholarship Application Form</h1>
+                        <p class="text-sm text-blue-700 font-bold uppercase tracking-tight">UniFAST Tertiary Education Subsidy (TDP) Program</p>
+                        <p class="text-[11px] text-gray-500 italic mt-3 max-w-lg mx-auto leading-relaxed">
+                            Instructions: Read General and Documentary Requirements. Fill in all the required information. Do not leave an item blank. If an item is not applicable, indicate "NA".
+                        </p>
+                    </div>
+
+                    <div class="w-24 h-24 flex items-center justify-center">
+                        <img src="{{ asset('images/unifast.png') }}" alt="UniFAST" class="max-h-full max-w-full object-contain">
+                    </div>
+                </div>
+
+                <div class="mt-4 flex items-center text-sm font-bold text-gray-600">
+                    {{ Auth::user()->email }} <span class="ml-2 text-blue-600 font-normal underline">Logged in</span>
                 </div>
             </div>
-        </form>
 
-        <footer class="text-center py-10">
-            <p class="text-[10px] text-gray-500 uppercase tracking-widest">
-                Scholarship Management System &copy; {{ date('Y') }}
-            </p>
-        </footer>
+            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 mb-6 space-y-6">
+                <h2 class="text-xl font-black text-blue-900 border-b-2 border-blue-50 pb-2 uppercase tracking-tighter">Personal Information</h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center bg-gray-50 overflow-hidden relative">
+                        <input type="file" name="applicant_photo" required class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="previewImage(this)">
+                        <img id="photo_preview" class="hidden absolute inset-0 w-full h-full object-cover">
+                        <div id="photo_placeholder" class="text-center p-2">
+                            <svg class="w-8 h-8 mx-auto text-gray-300 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            <p class="text-[9px] font-black uppercase text-gray-400">Upload 2x2 Photo *</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase">Last Name *</label>
+                        <input type="text" name="last_name" required class="w-full border-b border-gray-300 focus:border-blue-600 outline-none py-2 text-gray-800">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase">First Name *</label>
+                        <input type="text" name="first_name" required class="w-full border-b border-gray-300 focus:border-blue-600 outline-none py-2 text-gray-800">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase">Middle Name</label>
+                        <input type="text" name="middle_name" class="w-full border-b border-gray-300 focus:border-blue-600 outline-none py-2 text-gray-800">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase text-blue-700">Maiden Name (for married women)</label>
+                        <input type="text" name="maiden_name" placeholder="NA" class="w-full border-b border-gray-300 focus:border-blue-600 outline-none py-2 text-gray-800">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase">Date of Birth *</label>
+                        <input type="date" name="dob" required class="w-full border-b border-gray-300 focus:border-blue-600 outline-none py-2 text-gray-800">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase">Sex *</label>
+                        <div class="flex gap-4 mt-2">
+                            <label class="text-sm"><input type="radio" name="sex" value="male" required class="mr-1"> Male</label>
+                            <label class="text-sm"><input type="radio" name="sex" value="female" required class="mr-1"> Female</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4">
+                    <div class="md:col-span-3">
+                        <label class="block text-xs font-bold text-gray-500 uppercase">Place of Birth *</label>
+                        <input type="text" name="place_of_birth" placeholder="Town/City, Province" required class="w-full border-b border-gray-300 focus:border-blue-600 outline-none py-2">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase">POB Zip Code *</label>
+                        <input type="text" name="pob_zip_code" required class="w-full border-b border-gray-300 focus:border-blue-600 outline-none py-2">
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="block text-xs font-bold text-gray-500 uppercase">Permanent Address *</label>
+                        <input type="text" name="permanent_address" placeholder="Street/Brgy, Town/City, Province" required class="w-full border-b border-gray-300 focus:border-blue-600 outline-none py-2">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase">Zip Code *</label>
+                        <input type="text" name="zip_code" required class="w-full border-b border-gray-300 focus:border-blue-600 outline-none py-2">
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="block text-xs font-bold text-gray-500 uppercase">Citizenship *</label>
+                        <input type="text" name="citizenship" required value="Filipino" class="w-full border-b border-gray-300 focus:border-blue-600 outline-none py-2">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase">Tribal Membership (if any)</label>
+                        <input type="text" name="tribal_membership" placeholder="Indicate Tribe or NA" class="w-full border-b border-gray-300 focus:border-blue-600 outline-none py-2">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase">Disability Type (if any)</label>
+                        <input type="text" name="disability_type" placeholder="Indicate Disability or NA" class="w-full border-b border-gray-300 focus:border-blue-600 outline-none py-2">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase">Mobile Number *</label>
+                        <input type="text" name="mobile_number" required class="w-full border-b border-gray-300 focus:border-blue-600 outline-none py-2">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase">Email Address</label>
+                        <input type="email" name="email_address" class="w-full border-b border-gray-300 focus:border-blue-600 outline-none py-2">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 mb-6 space-y-6">
+                <h2 class="text-xl font-black text-blue-900 border-b-2 border-blue-50 pb-2 uppercase tracking-tighter">Academic Information</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-gray-500 uppercase">Name of School Attended *</label>
+                        <input type="text" name="school_name" required class="w-full border-b border-gray-300 focus:border-blue-600 outline-none py-2">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase">School ID Number</label>
+                        <input type="text" name="school_id_number" class="w-full border-b border-gray-300 focus:border-blue-600 outline-none py-2">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-gray-500 uppercase">Course / Program *</label>
+                        <input type="text" name="course" placeholder="e.g. BS in Information Technology" required class="w-full border-b border-gray-300 focus:border-blue-600 outline-none py-2">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase">School Sector *</label>
+                        <div class="flex gap-4 mt-2">
+                            <label class="text-sm"><input type="radio" name="school_sector" value="public" required class="mr-1"> Public</label>
+                            <label class="text-sm"><input type="radio" name="school_sector" value="private" required class="mr-1"> Private</label>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase">Year Level *</label>
+                        <select name="year_level" required class="w-full border-b border-gray-300 focus:border-blue-600 outline-none py-2">
+                            <option value="1">1st Year</option>
+                            <option value="2">2nd Year</option>
+                            <option value="3">3rd Year</option>
+                            <option value="4">4th Year</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-gray-500 uppercase">School Address *</label>
+                        <input type="text" name="school_address" required class="w-full border-b border-gray-300 focus:border-blue-600 outline-none py-2">
+                    </div>
+                </div>
+
+                <div class="pt-6 border-t border-blue-50">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-3">Are you enjoying other educational financial assistance? *</label>
+                    <div class="flex gap-6 mb-4">
+                        <label class="text-sm font-bold flex items-center cursor-pointer text-gray-700">
+                            <input type="radio" name="has_other_assistance" value="yes" class="mr-2 h-4 w-4 text-blue-600" onclick="toggleAssistance(true)"> Yes
+                        </label>
+                        <label class="text-sm font-bold flex items-center cursor-pointer text-gray-700">
+                            <input type="radio" name="has_other_assistance" value="no" checked class="mr-2 h-4 w-4 text-blue-600" onclick="toggleAssistance(false)"> No
+                        </label>
+                    </div>
+
+                    <div id="assistance_details" class="hidden space-y-4 bg-blue-50/50 p-4 rounded-lg border border-blue-100">
+                        <p class="text-[10px] font-black text-blue-800 uppercase mb-2 italic">If yes, please specify:</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <input type="text" name="other_assistance_1" placeholder="1. Name of Scholarship/Grant" class="w-full border-b border-gray-300 focus:border-blue-600 outline-none py-2 text-sm bg-transparent">
+                            <input type="text" name="other_assistance_2" placeholder="2. Name of Scholarship/Grant" class="w-full border-b border-gray-300 focus:border-blue-600 outline-none py-2 text-sm bg-transparent">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 mb-6 space-y-6">
+                <h2 class="text-xl font-black text-blue-900 border-b-2 border-blue-50 pb-2 uppercase tracking-tighter">Family Background</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    <div class="space-y-4">
+                        <p class="text-sm font-bold text-gray-800 underline decoration-blue-500 uppercase">Father's Info</p>
+                        <div class="flex gap-4">
+                            <label class="text-xs font-bold"><input type="radio" name="father_status" value="living" checked class="mr-1"> Living</label>
+                            <label class="text-xs font-bold"><input type="radio" name="father_status" value="deceased" class="mr-1"> Deceased</label>
+                        </div>
+                        <input type="text" name="father_name" placeholder="Full Name" class="w-full border-b py-2 text-sm outline-none focus:border-blue-600">
+                        <input type="text" name="father_occupation" placeholder="Occupation" class="w-full border-b py-2 text-sm outline-none focus:border-blue-600">
+                        <input type="text" name="father_address" placeholder="Permanent Address" class="w-full border-b py-2 text-sm outline-none focus:border-blue-600">
+                    </div>
+                    <div class="space-y-4">
+                        <p class="text-sm font-bold text-gray-800 underline decoration-blue-500 uppercase">Mother's Info</p>
+                        <div class="flex gap-4">
+                            <label class="text-xs font-bold"><input type="radio" name="mother_status" value="living" checked class="mr-1"> Living</label>
+                            <label class="text-xs font-bold"><input type="radio" name="mother_status" value="deceased" class="mr-1"> Deceased</label>
+                        </div>
+                        <input type="text" name="mother_name" placeholder="Full Name" class="w-full border-b py-2 text-sm outline-none focus:border-blue-600">
+                        <input type="text" name="mother_occupation" placeholder="Occupation" class="w-full border-b py-2 text-sm outline-none focus:border-blue-600">
+                        <input type="text" name="mother_address" placeholder="Permanent Address" class="w-full border-b py-2 text-sm outline-none focus:border-blue-600">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-blue-50">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase">Total Parents Gross Income *</label>
+                        <input type="number" name="total_income" required class="w-full border-b border-gray-300 py-2 outline-none focus:border-blue-600">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase">Number of Siblings *</label>
+                        <input type="number" name="siblings_count" required class="w-full border-b border-gray-300 py-2 outline-none focus:border-blue-600">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 mb-6 space-y-6">
+                <h2 class="text-xl font-black text-blue-900 border-b-2 border-blue-50 pb-2 uppercase tracking-tighter">Documentary Requirements</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="p-4 border rounded-lg bg-blue-50/30">
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-2">Certificate of Indigency *</label>
+                        <input type="file" name="indigency_certificate" required class="text-xs file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-blue-700 file:text-white cursor-pointer">
+                    </div>
+                    <div class="p-4 border rounded-lg bg-blue-50/30">
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-2">CORs / COEs *</label>
+                        <input type="file" name="enrollment_proof" required class="text-xs file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-blue-700 file:text-white cursor-pointer">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 mb-6">
+
+                <h2 class="text-xl font-black text-blue-900 border-b-2 border-blue-50 pb-2 uppercase mb-6 tracking-tighter">Certification</h2>
+                <label class="block text-center font-bold text-gray-500 uppercase mb-4">I hereby certify that foregoing statements are true and correct</label>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+
+                    <div>
+
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-4">Upload Signature *</label>
+                        <input type="file" name="signature_file" required class="text-xs file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-blue-50 file:text-blue-700">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Date Accomplished</label>
+                        <div class="w-full border-b border-gray-100 py-2 text-gray-400 font-bold bg-gray-50 px-2 rounded">
+                            {{ date('F d, Y') }}
+                        </div>
+                        <input type="hidden" name="date_accomplished" value="{{ date('Y-m-d') }}">
+                    </div>
+                </div>
+            </div>
+<div class="bg-gray-100 p-8 rounded-xl border-2 border-dashed border-gray-300 mb-6 select-none cursor-not-allowed">
+                <h2 class="text-center font-black text-gray-400 mb-8 tracking-widest uppercase text-sm">(Do Not Fill-Out This Portion For Chedro Use Only)</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 opacity-50">
+                    <div class="space-y-3">
+                        <p class="text-[10px] font-black text-gray-600 underline uppercase">Documents Attached:</p>
+                        <label class="flex items-center text-xs font-bold text-gray-500">
+                            <input type="checkbox" disabled class="mr-2"> CORs/COEs
+                        </label>
+                        <label class="flex items-center text-xs font-bold text-gray-500">
+                            <input type="checkbox" disabled class="mr-2"> Certificate of Indigency
+                        </label>
+                    </div>
+                    <div class="space-y-6 pt-4">
+                        <div class="text-center">
+                            <p class="text-[9px] font-black text-gray-400 uppercase">Evaluated / Processed By:</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="border-b border-gray-400 h-6 w-full mb-1"></div>
+                            <p class="text-[9px] font-black text-gray-400 uppercase">UniFAST Regional Coordinator</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+               <div class="bg-blue-900 p-6 rounded-xl text-white text-[10px] uppercase tracking-widest leading-relaxed mb-10">
+                <p class="font-black border-b border-blue-700 pb-2 mb-2">Qualification Requirements ( per Section 1 of the Memorandom Circular No._s. 2022)</p>
+                <p>Applicant must be a Filipino citizen with a combined household (parents/guardian) gross Income which shall not exceed Four Hundred Thousand Pesos<b>PhP 400,000.00</b>and maybe classified as one of the following:</p>
+                <br>
+                <p> 5.1 New TDP-TES Grantee must be enrolled in any first undergraduate degree in SUCs, CHED-Recognized LUCs and Private HEIs that are in the CHED Registry of Programs and Institutions.</p>
+            </div>
+             <div class="bg-blue-900 p-6 rounded-xl text-white text-[10px] uppercase tracking-widest leading-relaxed mb-10">
+                <p class="font-black border-b border-blue-700 pb-2 mb-2">Documentary Requirements ( per Section 3 of the Memorandom Circular No._s. 2022. 6.2.1 a. For new applicants)</p>
+                <p>  Participating higher education institutions (HEIs) must submit, to the respective CHED Regional Offices, a certified true copy or electronically-generated copy of the list of enrolled student - applicants with total number of units enrolled (Annex 5), with the attached certified electronically generated Certificate of Registration/Enrollment(CORs/COEs) as proff of enrollment.</p>
+                <br>
+                <p> 6.2.2 (Income Requirment) New applicants and continuing grantess shall submit a Certificate of Indigency as a proof of income, duly issued by the punong Barangay where the applicant resides.</p>
+             </div>
+            <button type="submit" class="w-full bg-blue-700 text-white py-5 rounded-2xl font-black uppercase tracking-widest hover:bg-blue-800 transition shadow-2xl active:scale-95 transform">
+                Submit Application
+            </button>
+        </form>
     </div>
 </div>
+
+<script>
+    // Toggle Financial Assistance Inputs
+    function toggleAssistance(show) {
+        const details = document.getElementById('assistance_details');
+        if (show) {
+            details.classList.remove('hidden');
+        } else {
+            details.classList.add('hidden');
+            // Clear inputs if they select 'No'
+            const inputs = details.querySelectorAll('input');
+            inputs.forEach(input => input.value = '');
+        }
+    }
+
+    // Image Preview for 2x2 Photo
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('photo_preview').src = e.target.result;
+                document.getElementById('photo_preview').classList.remove('hidden');
+                document.getElementById('photo_placeholder').classList.add('hidden');
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+</script>
 @endsection

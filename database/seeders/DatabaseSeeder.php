@@ -10,12 +10,10 @@ class DatabaseSeeder extends Seeder
     /**
      * Seed the application's database.
      */
-    public function run(): void {
-    \App\Models\User::create([
-        'name' => 'Admin User',
-        'email' => 'admin@unifast.gov.ph',
-        'password' => bcrypt('admin123'),
-        'role' => 'admin',
-    ]);
-}
+    public function run(): void
+    {
+        $this->call([
+            AdminSeeder::class,
+        ]);
+    }
 }

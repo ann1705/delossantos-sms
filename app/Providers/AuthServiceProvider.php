@@ -29,17 +29,13 @@ class AuthServiceProvider extends ServiceProvider
          * This gate allows users with the 'admin' role to access the
          * Scholarship Registry and Management features.
          */
-        Gate::define('access-admin', function (User $user) {
-            return $user->role === 'admin';
-        });
+        // app/Providers/AuthServiceProvider.php
+Gate::define('admin-only', function ($user) {
+    return $user->role === 'admin';
+});
 
-        /**
-         * Optional: Student Gate
-         * Use this if you want to strictly lock the student dashboard
-         * so admins can't accidentally submit applications.
-         */
-        Gate::define('access-student', function (User $user) {
-            return $user->role === 'student';
-        });
+Gate::define('student-only', function ($user) {
+    return $user->role === 'student';
+});
     }
 }

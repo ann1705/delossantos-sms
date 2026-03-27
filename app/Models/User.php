@@ -2,50 +2,52 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne; // Add this
 
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
-    'name',
-    'email',
-    'password',
-    'role', // Add this
-];
+        'name',
+        'email',
+        'password',
+        'role',
+        'profile_photo',
+    ];
 
-public function applications() {
-    return $this->hasMany(Application::class);
-}
+    // Relationship to Applications
+    public function applications(): HasMany {
+        return $this->hasMany(Application::class);
+    }
+
+    // FIX: Relationship to ApplicantData (needed for the admin registry/photos)
+    public function applicantData(): HasOne {
+        return $this->hasOne(ApplicantData::class);
+    }
 
     /**
-     * The attributes that should be hidden for serialization.
+     * Send the password reset notification.
      *
-     * @var array<int, string>
+     * @param  string  $token
+     * @return void
      */
+    public function sendPasswordResetNotification($token)
+    {
+        $this->notify(new \App\Notifications\ResetPasswordNotification($token));
+    }
+
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
-
-
 }
