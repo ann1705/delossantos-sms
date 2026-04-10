@@ -5,9 +5,10 @@ Project Name: UniFAST- TDP Scholarship Management System
 Follow these steps to set up the project locally from the GitHub repository.
 
 ### Prerequisites
-- PHP 8.1 or higher
+- XAMPP (includes PHP, MySQL, and Apache)
+- Visual Studio Code (recommended code editor)
 - Composer
-- Node.js and npm
+- Node.js(>= 14.x) and npm
 - MySQL or another database supported by Laravel
 - Git
 
@@ -83,7 +84,7 @@ Follow these steps to set up the project locally from the GitHub repository.
 ### Additional Notes
 - For password reset functionality, ensure your mail configuration is set up correctly (e.g., using Mailtrap for testing).
 - If using XAMPP, make sure Apache and MySQL are running.
-- For production deployment, configure your web server (e.g., Apache/Nginx) and set appropriate permissions.
+
 
 Feature List:
 
