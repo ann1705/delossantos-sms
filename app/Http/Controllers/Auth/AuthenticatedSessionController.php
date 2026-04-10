@@ -27,7 +27,7 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
         $request->session()->regenerate();
 
-        if ($request->user()->role === 'admin') {
+        if (in_array($request->user()->role, ['admin', 'secretary'])) {
             return redirect()->intended(route('admin.registry'));
         }
 
@@ -44,7 +44,7 @@ class AuthenticatedSessionController extends Controller
 
     public function authenticated(Request $request, $user)
 {
-    if ($user->role === 'admin') {
+    if (in_array($user->role, ['admin', 'secretary'])) {
         return redirect()->route('admin.registry'); // Or your admin dashboard route
     }
 

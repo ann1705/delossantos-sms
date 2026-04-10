@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
@@ -28,29 +30,56 @@ class NewPasswordController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'token' => ['required'],
-            'email' => ['required', 'email'],
+            'code' => ['required', 'string', 'size:6'],
+            'email' => ['required', 'email', 'exists:users,email'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        // The password broker handles the actual logic of updating the database
-        $status = Password::broker()->reset(
-            $request->only('email', 'password', 'password_confirmation', 'token'),
-            function ($user, $password) {
-                $user->forceFill([
-                    'password' => Hash::make($password),
-                    'remember_token' => Str::random(60),
-                ])->save();
+        // Pad the code with leading zeros
+        $paddedCode = str_pad($request->code, 6, '0', STR_PAD_LEFT);
 
-                event(new PasswordReset($user));
-            }
-        );
+        // Check if the code exists and matches and is not expired
+        $resetToken = DB::table('password_reset_tokens')
+            ->where('email', $request->email)
+            ->where('token', $paddedCode)
+            ->where('created_at', '>', now()->subMinutes(60))
+            ->first();
 
-        // If the reset was successful, redirect to login
-        return $status == Password::PASSWORD_RESET
-            ? redirect()->route('login')->with('status', __($status))
-            : back()->withInput($request->only('email'))
-                    ->withErrors(['email' => __($status)]);
+        if (!$resetToken) {
+            return back()
+                ->with('code_verified', true)
+                ->with('code_sent', true)
+                ->with('reset_email', $request->email)
+                ->with('reset_code', $request->code)
+                ->withInput(['email' => $request->email, 'code' => $request->code])
+                ->withErrors(['code' => 'Invalid or expired reset code.']);
+        }
+
+        // Update the user's password
+        $user = User::where('email', $request->email)->first();
+        if ($user) {
+            $user->update([
+                'password' => Hash::make($request->password),
+                'remember_token' => Str::random(60),
+            ]);
+
+            // Delete the used token
+            DB::table('password_reset_tokens')
+                ->where('email', $request->email)
+                ->delete();
+
+            event(new PasswordReset($user));
+
+            return redirect()->route('login')->with('status', '✅ Your password has been reset successfully! You can now log in with your new password.');
+        }
+
+        return back()
+            ->with('code_verified', true)
+            ->with('code_sent', true)
+            ->with('reset_email', $request->email)
+            ->with('reset_code', $request->code)
+            ->withInput(['email' => $request->email, 'code' => $request->code])
+            ->withErrors(['email' => 'User not found.']);
     }
 
 

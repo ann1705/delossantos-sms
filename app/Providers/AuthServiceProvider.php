@@ -30,12 +30,16 @@ class AuthServiceProvider extends ServiceProvider
          * Scholarship Registry and Management features.
          */
         // app/Providers/AuthServiceProvider.php
-Gate::define('admin-only', function ($user) {
-    return $user->role === 'admin';
-});
+        Gate::define('admin-only', function ($user) {
+            return $user->role === 'admin';
+        });
 
-Gate::define('student-only', function ($user) {
-    return $user->role === 'student';
-});
+        Gate::define('admin-or-secretary', function ($user) {
+            return in_array($user->role, ['admin', 'secretary']);
+        });
+
+        Gate::define('student-only', function ($user) {
+            return $user->role === 'student';
+        });
     }
 }

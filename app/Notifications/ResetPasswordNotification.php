@@ -34,17 +34,12 @@ class ResetPasswordNotification extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
-        $url = url(route('password.reset', [
-            'token' => $this->token,
-            'email' => $notifiable->getEmailForPasswordReset(),
-        ], false));
-
         return (new MailMessage)
-            ->subject(Lang::get('Reset Password Notification'))
+            ->subject(Lang::get('Password Reset Code'))
             ->greeting('Hello!')
             ->line(Lang::get('You are receiving this email because we received a password reset request for your account.'))
-            ->action(Lang::get('Reset Password'), $url)
-            ->line(Lang::get('This password reset link will expire in :count minutes.', ['count' => config('auth.passwords.'.config('auth.defaults.passwords').'.expire', 60)]))
+            ->line('Your password reset code is: **' . $this->token . '**')
+            ->line(Lang::get('This password reset code will expire in :count minutes.', ['count' => config('auth.passwords.'.config('auth.defaults.passwords').'.expire', 60)]))
             ->line(Lang::get('If you did not request a password reset, no further action is required.'))
             ->salutation('Regards, UniFAST-TDP SMS Team');
     }

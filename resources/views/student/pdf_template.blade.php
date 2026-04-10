@@ -9,7 +9,7 @@
 </div>
 <div class="content">
     <p><strong>Name:</strong> {{ Auth::user()->name }}</p>
-    <p><strong>Course:</strong> {{ $application->course }}</p>
+    <p><strong>Course:</strong> {{ $application->applicantData->course }}</p>
     <p><strong>Student ID:</strong> {{ $application->student_id_no }}</p>
     <p><strong>Status:</strong> {{ strtoupper($application->status) }}</p>
 </div>

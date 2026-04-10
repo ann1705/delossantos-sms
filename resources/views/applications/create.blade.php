@@ -1,60 +1,65 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="min-h-screen bg-indigo-50/50 py-10 px-4 mt-10">
+<div class="min-h-screen py-10 px-4 mt-10" style="background: linear-gradient(135deg, #1A2236 0%, #232B43 100%);">
     <div class="max-w-4xl mx-auto">
 
         @php
-            $editing = isset($application) && $application;
-            $applicantData = $applicantData ?? null;
-            $currentStatus = $applicantData?->application_status ?? $application?->status ?? 'pending';
+            $editing = isset($applicantData) && $applicantData;
+            $currentStatus = $applicantData?->application_status ?? 'pending';
             $canEdit = !$editing || $currentStatus === 'pending';
         @endphp
 
         @if($errors->has('error') || session('error'))
-            <div class="max-w-4xl mx-auto mb-6 bg-red-50 border-2 border-red-300 rounded-2xl p-6">
+            <div class="max-w-4xl mx-auto mb-6 rounded-2xl p-6" style="background-color: rgba(239, 68, 68, 0.1); border: 2px solid rgba(239, 68, 68, 0.3);">
                 <div class="flex items-start gap-4">
-                    <div class="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                    <div class="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-1" style="background-color: #EF4444;">
                         <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </div>
                     <div>
-                        <h3 class="font-black text-red-700 uppercase tracking-tight mb-1">Access Denied</h3>
-                        <p class="text-sm text-red-600">{{ $errors->first('error') ?? session('error') }}</p>
+                        <h3 class="font-black uppercase tracking-tight mb-1" style="color: #FCA5A5;">Access Denied</h3>
+                        <p class="text-sm" style="color: #FECACA;">{{ $errors->first('error') ?? session('error') }}</p>
                     </div>
                 </div>
             </div>
         @endif
+
+        <div class="max-w-4xl mx-auto mb-4 flex justify-end">
+            <a href="{{ route('student.dashboard.view') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg btn-accent text-sm font-semibold shadow-sm transition">
+                &larr; Back to Dashboard
+            </a>
+        </div>
 
         @if($editing && !$canEdit)
-            <div class="max-w-4xl mx-auto mb-6 bg-red-50 border-2 border-red-300 rounded-2xl p-6">
+            <div class="max-w-4xl mx-auto mb-6 rounded-2xl p-6" style="background-color: rgba(239, 68, 68, 0.1); border: 2px solid rgba(239, 68, 68, 0.3);">
                 <div class="flex items-start gap-4">
-                    <div class="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                    <div class="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-1" style="background-color: #EF4444;">
                         <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </div>
                     <div>
-                        <h3 class="font-black text-red-700 uppercase tracking-tight mb-1">Application Status: {{ ucfirst($currentStatus) }}</h3>
-                        <p class="text-sm text-red-600">Your application has been {{ $currentStatus }}. You can no longer edit or update this application. Please contact the CHED Regional Office if you have any inquiries.</p>
+                        <h3 class="font-black uppercase tracking-tight mb-1" style="color: #FCA5A5;">Application Status: {{ ucfirst($currentStatus) }}</h3>
+                        <p class="text-sm" style="color: #FECACA;">Your application has been {{ $currentStatus }}. You can no longer edit or update this application. Please contact the CHED Regional Office if you have any inquiries.</p>
                     </div>
                 </div>
             </div>
         @endif
 
-        <form action="{{ $canEdit ? ($editing ? route('applications.update', $application->id) : route('applications.store')) : 'javascript:void(0)' }}" method="POST" enctype="multipart/form-data" {{ !$canEdit ? 'onsubmit="event.preventDefault(); alert(\'Your application status is ' . ucfirst($currentStatus) . ' and cannot be modified.\');"' : '' }}>
+        <form action="{{ $canEdit ? ($editing ? route('applications.update', $applicantData->id) : route('applications.store')) : 'javascript:void(0)' }}" method="POST" enctype="multipart/form-data" {{ !$canEdit ? 'onsubmit="event.preventDefault(); alert(\'Your application status is ' . ucfirst($currentStatus) . ' and cannot be modified.\');"' : '' }}>
             @csrf
             @if($editing && $canEdit)
                 @method('PUT')
             @endif
 
-            <div class="bg-white rounded-t-xl shadow-md border-t-[10px] border-blue-700 p-8 mb-6">
+            <div class="glass rounded-t-xl shadow-md p-8 mb-6" style="border-top: 10px solid var(--color-accent);">
                 <div class="flex flex-col md:flex-row justify-between items-center gap-6 mb-6">
                     <div class="w-24 h-24 flex items-center justify-center">
                         <img src="{{ asset('images/ched.png') }}" alt="CHED" class="max-h-full max-w-full object-contain">
                     </div>
 
                     <div class="text-center flex-1">
-                        <h1 class="text-3xl font-black text-gray-900 mb-1 uppercase tracking-tighter">Scholarship Application Form</h1>
-                        <p class="text-sm text-blue-700 font-bold uppercase tracking-tight">UniFAST Tertiary Education Subsidy (TDP) Program</p>
-                        <p class="text-[11px] text-gray-500 italic mt-3 max-w-lg mx-auto leading-relaxed">
+                        <h1 class="text-3xl font-black text-white mb-1 uppercase tracking-tighter">Scholarship Application Form</h1>
+                        <p class="text-sm font-bold uppercase tracking-tight" style="color: var(--color-accent);">UniFAST Tertiary Education Subsidy (TDP) Program</p>
+                        <p class="text-[11px] italic mt-3 max-w-lg mx-auto leading-relaxed" style="color: var(--color-muted);">
                             Instructions: Read General and Documentary Requirements. Fill in all the required information. Do not leave an item blank. If an item is not applicable, indicate "NA".
                         </p>
                     </div>
@@ -64,23 +69,24 @@
                     </div>
                 </div>
 
-                <div class="mt-4 flex items-center text-sm font-bold text-gray-600">
-                    {{ Auth::user()->email }} <span class="ml-2 text-blue-600 font-normal underline">Logged in</span>
+                <div class="mt-4 flex items-center text-sm font-bold" style="color: var(--color-muted);">
+                    {{ Auth::user()->email }} <span class="ml-2 font-normal underline" style="color: var(--color-accent);">Logged in</span>
                 </div>
             </div>
 
-            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 mb-6 space-y-6">
-                <h2 class="text-xl font-black text-blue-900 border-b-2 border-blue-50 pb-2 uppercase tracking-tighter">Personal Information</h2>
+            <div class="glass-card p-8 rounded-xl mb-6 space-y-6">
+                <h2 class="text-xl font-black text-gray-900 border-b-2 pb-2 uppercase tracking-tighter" style="border-bottom-color: var(--color-accent);">Personal Information</h2>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center bg-gray-50 overflow-hidden relative">
                         <input type="file" name="applicant_photo" @if(!$editing) required @endif class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="previewImage(this)">
                         @if($editing && $applicantData && $applicantData->applicant_photo)
                             <img id="photo_preview" src="{{ asset($applicantData->applicant_photo) }}" class="absolute inset-0 w-full h-full object-cover">
+                            <div id="photo_placeholder" class="hidden text-center p-2">
                         @else
                             <img id="photo_preview" class="hidden absolute inset-0 w-full h-full object-cover">
+                            <div id="photo_placeholder" class="text-center p-2">
                         @endif
-                        <div id="photo_placeholder" class="text-center p-2">
                             <svg class="w-8 h-8 mx-auto text-gray-300 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                             <p class="text-[9px] font-black uppercase text-gray-400">Upload 2x2 Photo @if(!$editing)*@endif</p>
                         </div>
@@ -158,8 +164,8 @@
                 </div>
             </div>
 
-            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 mb-6 space-y-6">
-                <h2 class="text-xl font-black text-blue-900 border-b-2 border-blue-50 pb-2 uppercase tracking-tighter">Academic Information</h2>
+            <div class="glass-card p-8 rounded-xl mb-6 space-y-6">
+                <h2 class="text-xl font-black text-gray-900 border-b-2 pb-2 uppercase tracking-tighter" style="border-bottom-color: var(--color-accent);">Academic Information</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="md:col-span-2">
                         <label class="block text-xs font-bold text-gray-500 uppercase">Name of School Attended *</label>
@@ -171,7 +177,7 @@
                     </div>
                     <div class="md:col-span-2">
                         <label class="block text-xs font-bold text-gray-500 uppercase">Course / Program *</label>
-                        <input type="text" name="course" placeholder="e.g. BS in Information Technology" required value="{{ old('course', $applicantData->course ?? $application->course ?? '') }}" class="w-full border-b border-gray-300 focus:border-blue-600 outline-none py-2">
+                        <input type="text" name="course" placeholder="e.g. BS in Information Technology" required value="{{ old('course', $applicantData->course ?? '') }}" class="w-full border-b border-gray-300 focus:border-blue-600 outline-none py-2">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase">School Sector *</label>
@@ -183,10 +189,10 @@
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase">Year Level *</label>
                         <select name="year_level" required class="w-full border-b border-gray-300 focus:border-blue-600 outline-none py-2">
-                            <option value="1" {{ old('year_level', $applicantData->year_level ?? $application->year_level ?? '') == '1' ? 'selected' : '' }}>1st Year</option>
-                            <option value="2" {{ old('year_level', $applicantData->year_level ?? $application->year_level ?? '') == '2' ? 'selected' : '' }}>2nd Year</option>
-                            <option value="3" {{ old('year_level', $applicantData->year_level ?? $application->year_level ?? '') == '3' ? 'selected' : '' }}>3rd Year</option>
-                            <option value="4" {{ old('year_level', $applicantData->year_level ?? $application->year_level ?? '') == '4' ? 'selected' : '' }}>4th Year</option>
+                            <option value="1" {{ old('year_level', $applicantData->year_level ?? '') == '1' ? 'selected' : '' }}>1st Year</option>
+                            <option value="2" {{ old('year_level', $applicantData->year_level ?? '') == '2' ? 'selected' : '' }}>2nd Year</option>
+                            <option value="3" {{ old('year_level', $applicantData->year_level ?? '') == '3' ? 'selected' : '' }}>3rd Year</option>
+                            <option value="4" {{ old('year_level', $applicantData->year_level ?? '') == '4' ? 'selected' : '' }}>4th Year</option>
                         </select>
                     </div>
                     <div class="md:col-span-2">
@@ -217,8 +223,8 @@
                 </div>
             </div>
 
-            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 mb-6 space-y-6">
-                <h2 class="text-xl font-black text-blue-900 border-b-2 border-blue-50 pb-2 uppercase tracking-tighter">Family Background</h2>
+            <div class="glass-card p-8 rounded-xl mb-6 space-y-6">
+                <h2 class="text-xl font-black text-gray-900 border-b-2 pb-2 uppercase tracking-tighter" style="border-bottom-color: var(--color-accent);">Family Background</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
                     <div class="space-y-4">
                         <p class="text-sm font-bold text-gray-800 underline decoration-blue-500 uppercase">Father's Info</p>
@@ -256,8 +262,8 @@
                 </div>
             </div>
 
-            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 mb-6 space-y-6">
-                <h2 class="text-xl font-black text-blue-900 border-b-2 border-blue-50 pb-2 uppercase tracking-tighter">Documentary Requirements</h2>
+            <div class="glass-card p-8 rounded-xl mb-6 space-y-6">
+                <h2 class="text-xl font-black text-gray-900 border-b-2 pb-2 uppercase tracking-tighter" style="border-bottom-color: var(--color-accent);">Documentary Requirements</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div class="p-4 border rounded-lg bg-blue-50/30">
                         <label class="block text-xs font-bold text-gray-700 uppercase mb-2">Certificate of Indigency @if(!$editing)*@endif</label>
@@ -276,19 +282,19 @@
                 </div>
             </div>
 
-            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 mb-6">
+            <div class="glass-card p-8 rounded-xl shadow-sm mb-6">
 
-                <h2 class="text-xl font-black text-blue-900 border-b-2 border-blue-50 pb-2 uppercase mb-6 tracking-tighter">Certification</h2>
-                <label class="block text-center font-bold text-gray-500 uppercase mb-4">I hereby certify that foregoing statements are true and correct</label>
+                <h2 class="text-xl font-black text-gray-900 border-b-2 pb-2 uppercase mb-6 tracking-tighter" style="border-bottom-color: var(--color-accent);">Certification</h2>
+                <label class="block text-center font-bold uppercase mb-4" style="color: var(--color-muted);">I hereby certify that foregoing statements are true and correct</label>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
 
                     <div>
 
-                        <label class="block text-xs font-bold text-gray-500 uppercase mb-4">Upload Signature @if(!$editing)*@endif</label>
-                        <input type="file" name="signature_file" @if(!$editing) required @endif class="text-xs file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-blue-50 file:text-blue-700">
+                <label class="block text-xs font-bold text-white uppercase mb-4">Upload Signature @if(!$editing)*@endif</label>
+                        <input type="file" name="signature_file" @if(!$editing) required @endif class="text-xs file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-gray-900 cursor-pointer" style="file:background-color: var(--color-accent);">
                         @if($editing && $applicantData && $applicantData->signature_path)
-                            <p class="text-[10px] text-green-700 mt-2">Existing signature image uploaded.</p>
+                            <p class="text-[10px] text-green-400 mt-2">Existing signature image uploaded.</p>
                         @endif
                     </div>
 
@@ -325,21 +331,28 @@
 
                 </div>
             </div>
-               <div class="bg-blue-900 p-6 rounded-xl text-white text-[10px] uppercase tracking-widest leading-relaxed mb-10">
-                <p class="font-black border-b border-blue-700 pb-2 mb-2">Qualification Requirements ( per Section 1 of the Memorandom Circular No._s. 2022)</p>
-                <p>Applicant must be a Filipino citizen with a combined household (parents/guardian) gross Income which shall not exceed Four Hundred Thousand Pesos<b>PhP 400,000.00</b>and maybe classified as one of the following:</p>
+               <div class="glass p-6 rounded-xl text-white text-[10px] uppercase tracking-widest leading-relaxed mb-10" style="border-left: 4px solid var(--color-accent);">
+                <p class="font-black border-b pb-2 mb-2" style="border-bottom-color: var(--color-accent);">Qualification Requirements ( per Section 1 of the Memorandom Circular No._s. 2022)</p>
+                <p>Applicant must be a Filipino citizen with a combined household (parents/guardian) gross Income which shall not exceed Four Hundred Thousand Pesos<b style="color: var(--color-accent);">PhP 400,000.00</b>and maybe classified as one of the following:</p>
                 <br>
                 <p> 5.1 New TDP-TES Grantee must be enrolled in any first undergraduate degree in SUCs, CHED-Recognized LUCs and Private HEIs that are in the CHED Registry of Programs and Institutions.</p>
             </div>
-             <div class="bg-blue-900 p-6 rounded-xl text-white text-[10px] uppercase tracking-widest leading-relaxed mb-10">
-                <p class="font-black border-b border-blue-700 pb-2 mb-2">Documentary Requirements ( per Section 3 of the Memorandom Circular No._s. 2022. 6.2.1 a. For new applicants)</p>
+             <div class="glass p-6 rounded-xl text-white text-[10px] uppercase tracking-widest leading-relaxed mb-10" style="border-left: 4px solid var(--color-accent);">
+                <p class="font-black border-b pb-2 mb-2" style="border-bottom-color: var(--color-accent);">Documentary Requirements ( per Section 3 of the Memorandom Circular No._s. 2022. 6.2.1 a. For new applicants)</p>
                 <p>  Participating higher education institutions (HEIs) must submit, to the respective CHED Regional Offices, a certified true copy or electronically-generated copy of the list of enrolled student - applicants with total number of units enrolled (Annex 5), with the attached certified electronically generated Certificate of Registration/Enrollment(CORs/COEs) as proff of enrollment.</p>
                 <br>
                 <p> 6.2.2 (Income Requirment) New applicants and continuing grantess shall submit a Certificate of Indigency as a proof of income, duly issued by the punong Barangay where the applicant resides.</p>
              </div>
-            <button type="submit" class="w-full bg-blue-700 text-white py-5 rounded-2xl font-black uppercase tracking-widest {{ !$canEdit ? 'opacity-50 cursor-not-allowed bg-gray-400' : 'hover:bg-blue-800 active:scale-95 transform' }} transition shadow-2xl" {{ !$canEdit ? 'disabled' : '' }}>
-                {{ !$canEdit ? 'Application Locked - Status: ' . ucfirst($currentStatus) : ($editing ? 'Update Application' : 'Submit Application') }}
-            </button>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button type="submit" class="w-full text-white py-5 rounded-2xl font-black uppercase tracking-widest transition shadow-2xl" style="background-color: var(--color-accent); color: #232B43;" {{ !$canEdit ? 'disabled' : '' }}>
+                    {{ !$canEdit ? 'Application Locked - Status: ' . ucfirst($currentStatus) : ($editing ? 'Update Application' : 'Submit Application') }}
+                </button>
+                @if($canEdit)
+                    <button type="submit" name="download" value="1" class="w-full text-white py-5 rounded-2xl font-black uppercase tracking-widest transition shadow-2xl" style="background: linear-gradient(to right, #15803d, #059669);">
+                        {{ $editing ? 'Update & Download PDF' : 'Submit & Download PDF' }}
+                    </button>
+                @endif
+            </div>
         </form>
     </div>
 </div>

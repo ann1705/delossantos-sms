@@ -8,10 +8,11 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne; // Add this
+use Illuminate\Auth\Passwords\CanResetPassword;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, CanResetPassword;
 
     protected $fillable = [
         'name',
@@ -21,12 +22,7 @@ class User extends Authenticatable
         'profile_photo',
     ];
 
-    // Relationship to Applications
-    public function applications(): HasMany {
-        return $this->hasMany(Application::class);
-    }
-
-    // FIX: Relationship to ApplicantData (needed for the admin registry/photos)
+    // Relationship to ApplicantData
     public function applicantData(): HasOne {
         return $this->hasOne(ApplicantData::class);
     }

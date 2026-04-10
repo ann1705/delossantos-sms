@@ -67,6 +67,13 @@ class ProfileController extends Controller
 
         $user->save();
 
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json([
+                'message' => 'Profile updated successfully!',
+                'user' => $user,
+            ]);
+        }
+
         return redirect()->back()->with('success', 'Profile updated successfully!');
     }
 
@@ -75,13 +82,19 @@ class ProfileController extends Controller
         $user = Auth::user();
 
         $request->validate([
-            'password' => 'required|password',
+            'password' => ['required', 'current_password'],
         ]);
-
-        Auth::logout();
 
         $user->delete();
 
+        if ($request->wantsJson() || $request->is('api/*')) {
+            // For API: revoke all tokens
+            $user->tokens()->delete();
+            return response()->json(['message' => 'Your account has been deleted successfully.']);
+        }
+
+        // For web: logout and invalidate session
+        Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
