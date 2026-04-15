@@ -16,7 +16,7 @@ Follow these steps to set up the project locally from the GitHub repository.
 
 1. **Clone the Repository**
    ```bash
-   git clone https://github.com/your-username/delossantos-sms.git
+   git clone https://github.com/ann1705/delossantos-sms.git
    cd delossantos-sms
    ```
 
