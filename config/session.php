@@ -9,12 +9,11 @@ return [
     | Default Session Driver
     |--------------------------------------------------------------------------
     |
-    | This option controls the default session "driver" that will be used on
-    | requests. By default, we will use the lightweight native driver but
-    | you may specify any of the other wonderful drivers provided here.
+    | This option controls the default session connection that gets used while
+    | using this session library. This connection is used when another is not
+    | explicitly specified while executing work with the session API.
     |
-    | Supported: "file", "cookie", "database", "apc",
-    |            "memcached", "redis", "dynamodb", "array"
+    | Supported: "file", "cookie", "database", "apc", "memcached", "redis", "dynamodb", "array"
     |
     */
 
@@ -42,7 +41,7 @@ return [
     |
     | This option allows you to easily specify that all of your session data
     | should be encrypted before it is stored. All encryption will be run
-    | automatically by Laravel and you can use the Session like normal.
+    | automatically by Laravel and you can use the session as usual.
     |
     */
 
@@ -66,9 +65,9 @@ return [
     | Session Database Connection
     |--------------------------------------------------------------------------
     |
-    | When using the "database" or "redis" session drivers, you may specify a
-    | connection that should be used to manage these sessions. This should
-    | correspond to a connection in your database configuration options.
+    | When using the database session driver, you may specify the connection
+    | that should be used to manage these sessions. This should correspond
+    | to a connection in your database configuration options.
     |
     */
 
@@ -79,7 +78,7 @@ return [
     | Session Database Table
     |--------------------------------------------------------------------------
     |
-    | When using the "database" session driver, you may specify the table we
+    | When using the database session driver, you may specify the table we
     | should use to manage the sessions. Of course, a sensible default is
     | provided for you; however, you are free to change this as needed.
     |
@@ -92,11 +91,9 @@ return [
     | Session Cache Store
     |--------------------------------------------------------------------------
     |
-    | While using one of the framework's cache driven session backends you may
-    | list a cache store that should be used for these sessions. This value
-    | must match with one of the application's configured cache "stores".
-    |
-    | Affects: "apc", "dynamodb", "memcached", "redis"
+    | When using the cache session driver, you may specify the cache store
+    | that should be used for session storage. This value must correspond
+    | to one of the application's configured cache stores.
     |
     */
 
@@ -107,9 +104,9 @@ return [
     | Session Sweeping Lottery
     |--------------------------------------------------------------------------
     |
-    | Some session drivers must manually sweep their storage location to get
-    | rid of old sessions from storage. Here are the chances that it will
-    | happen on a given request. By default, the odds are 2 out of 100.
+    | Some session drivers must manually sweep their storage locations to
+    | get rid of stale sessions. Here are the chances that it will happen
+    | on a given request.
     |
     */
 
@@ -150,8 +147,8 @@ return [
     |--------------------------------------------------------------------------
     |
     | Here you may change the domain of the cookie used to identify a session
-    | in your application. This will determine which domains the cookie is
-    | available to in your application. A sensible default has been set.
+    | in your application. This may be useful for running multiple subdomains
+    | that share the same sessions.
     |
     */
 
@@ -164,11 +161,11 @@ return [
     |
     | By setting this option to true, session cookies will only be sent back
     | to the server if the browser has a HTTPS connection. This will keep
-    | the cookie from being sent to you when it can't be done securely.
+    | the cookie from being sent to insecure HTTP hosts.
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    'secure' => env('SESSION_SECURE_COOKIE', false),
 
     /*
     |--------------------------------------------------------------------------
@@ -176,8 +173,8 @@ return [
     |--------------------------------------------------------------------------
     |
     | Setting this value to true will prevent JavaScript from accessing the
-    | value of the cookie and the cookie will only be accessible through
-    | the HTTP protocol. You are free to modify this option if needed.
+    | value of the session cookie. You may still access the session cookie
+    | through the PHP global variable $_COOKIE.
     |
     */
 
@@ -190,12 +187,12 @@ return [
     |
     | This option determines how your cookies behave when cross-site requests
     | take place, and can be used to mitigate CSRF attacks. By default, we
-    | will set this value to "lax" since this is a secure default value.
+    | do not enable this as other CSRF protection services may be working.
     |
     | Supported: "lax", "strict", "none", null
     |
     */
 
-    'same_site' => 'lax',
+    'same_site' => env('SESSION_SAME_SITE', 'lax'),
 
 ];

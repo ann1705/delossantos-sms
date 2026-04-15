@@ -22,14 +22,44 @@ class ApplicationController extends Controller
         $applications = ApplicantData::with(['user', 'latestReview'])
             ->when($search, function ($query, $search) {
                 return $query->whereHas('user', function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%");
-                })->orWhere('course', 'like', "%{$search}%");
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('id', $search);
+                })->orWhere('id', $search)
+                  ->orWhere('school_name', 'like', "%{$search}%");
             })
             ->latest()->get();
 
+        $message = null;
+        $totalApplicants = $applications->count();
+        $pendingCount = $applications->where('application_status', 'pending')->count();
+        $approvedCount = $applications->where('application_status', 'approved')->count();
+        $rejectedCount = $applications->where('application_status', 'rejected')->count();
+
+        if ($search && $applications->isEmpty()) {
+            $message = 'Keyword does not match';
+
+            $totalApplicants = ApplicantData::count();
+            $pendingCount = ApplicantData::where('application_status', 'pending')->count();
+            $approvedCount = ApplicantData::where('application_status', 'approved')->count();
+            $rejectedCount = ApplicantData::where('application_status', 'rejected')->count();
+        }
+
         // Return JSON for API requests
-        if ($request->wantsJson()) {
-            return response()->json($applications);
+        if ($request->wantsJson() || $request->is('api/*')) {
+            $response = [
+                'applications' => $applications,
+                'total_applicant' => $totalApplicants,
+                'pending' => $pendingCount,
+                'approve' => $approvedCount,
+                'rejected' => $rejectedCount,
+            ];
+
+            if ($message) {
+                $response['message'] = $message;
+            }
+
+            return response()->json($response);
         }
 
         return view('admin.registry', compact('applications'));
@@ -68,6 +98,12 @@ class ApplicationController extends Controller
     {
         // Prevent admin/secretary accounts from submitting applications
         if (in_array(Auth::user()->role, ['admin', 'secretary'])) {
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'message' => 'Admin and Secretary accounts cannot submit scholarship applications.',
+                ], 403);
+            }
+
             return redirect()->route('admin.registry')->with('error', 'Admin and Secretary accounts cannot submit scholarship applications.');
         }
 
@@ -148,7 +184,7 @@ class ApplicationController extends Controller
         }
 
         // Return JSON for API requests
-        if ($request->wantsJson()) {
+        if ($request->wantsJson() || $request->is('api/*')) {
             return response()->json([
                 'message' => 'Application submitted successfully',
                 'data' => $applicantData,
@@ -204,6 +240,13 @@ class ApplicationController extends Controller
             return $this->downloadAdminPdf($id);
         }
 
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json([
+                'message' => 'Application for ' . $applicantData->first_name . ' has been updated.',
+                'data' => $applicantData,
+            ], 200);
+        }
+
         return back()->with('success', 'Application for ' . $applicantData->first_name . ' has been updated.');
     }
 
@@ -213,15 +256,25 @@ class ApplicationController extends Controller
     public function show($id)
     {
         // Fetch applicant data
-        $applicantData = ApplicantData::with('user')->find($id);
+        $applicantData = ApplicantData::with(['user', 'latestReview'])->find($id);
 
         if (!$applicantData) {
+            if (request()->wantsJson() || request()->is('api/*')) {
+                return response()->json(['error' => 'Application not found for ID ' . $id], 404);
+            }
             return redirect()->route('admin.registry')->with('error', 'Application not found for ID ' . $id);
         }
 
         // Security: Prevent non-admin/non-secretary users from seeing other students' applications
         if (!in_array(Auth::user()->role, ['admin', 'secretary']) && $applicantData->user_id !== Auth::id()) {
             abort(403, 'You are not authorized to view this application.');
+        }
+
+        if (request()->wantsJson() || request()->is('api/*')) {
+            return response()->json([
+                'application' => $applicantData,
+                'review' => $applicantData->latestReview ? $applicantData->latestReview->toArray() : null,
+            ]);
         }
 
         $application = null; // Keep for backward compatibility in views
@@ -271,7 +324,7 @@ class ApplicationController extends Controller
         // Students can only delete pending applications
         if (Auth::user()->role === 'student') {
             if ($applicantData->application_status !== 'pending') {
-                if (request()->wantsJson()) {
+                if (request()->wantsJson() || request()->is('api/*')) {
                     return response()->json(['message' => 'You cannot delete an application that has been ' . $applicantData->application_status . '.'], 400);
                 }
                 return back()->with('error', 'You cannot delete an application that has been ' . $applicantData->application_status . '.');
@@ -280,7 +333,7 @@ class ApplicationController extends Controller
 
         $applicantData->delete();
 
-        if (request()->wantsJson()) {
+        if (request()->wantsJson() || request()->is('api/*')) {
             return response()->json(['message' => 'Application deleted successfully'], 200);
         }
 
@@ -300,7 +353,7 @@ class ApplicationController extends Controller
 
         $applicantData->delete();
 
-        if (request()->wantsJson()) {
+        if (request()->wantsJson() || request()->is('api/*')) {
             return response()->json(['message' => 'Application deleted successfully by admin'], 200);
         }
 
@@ -330,19 +383,30 @@ class ApplicationController extends Controller
         $adminCount = User::where('role', 'admin')->count();
         $secretaryCount = User::where('role', 'secretary')->count();
         $studentCount = User::where('role', 'student')->count();
+        $message = null;
+
+        if ($search && $users->isEmpty()) {
+            $message = 'Keyword does not match';
+        }
 
         // Return JSON for API requests
-        if ($request->wantsJson()) {
-            return response()->json([
+        if ($request->wantsJson() || $request->is('api/*')) {
+            $response = [
                 'users' => $users,
                 'total_users' => $totalUsers,
                 'admin_count' => $adminCount,
                 'secretary_count' => $secretaryCount,
                 'student_count' => $studentCount,
-            ]);
+            ];
+
+            if ($message) {
+                $response['message'] = $message;
+            }
+
+            return response()->json($response);
         }
 
-        return view('admin.users', compact('users', 'totalUsers', 'adminCount', 'secretaryCount', 'studentCount'));
+        return view('admin.users', compact('users', 'totalUsers', 'adminCount', 'secretaryCount', 'studentCount', 'message'));
     }
 
     public function userStore(Request $request)
@@ -354,12 +418,16 @@ class ApplicationController extends Controller
             'role' => 'required|in:admin,student,secretary',
         ]);
 
-        User::create([
+        $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => $request->role,
         ]);
+
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json(['message' => 'User created.', 'user' => $user], 201);
+        }
 
         return redirect()->route('admin.users')->with('success', 'User created.');
     }
@@ -367,11 +435,79 @@ class ApplicationController extends Controller
    public function viewForm()
 {
     // Get the detailed data for the logged-in student
-    $applicantData = ApplicantData::where('user_id', Auth::id())->first();
+    $applicantData = ApplicantData::with('latestReview')->where('user_id', Auth::id())->first();
     $application = null; // Keep for backward compatibility
 
     if (!$applicantData) {
+        if (request()->wantsJson() || request()->is('api/*')) {
+            return response()->json(['error' => 'No application data found.'], 404);
+        }
         return redirect()->route('student.dashboard')->with('error', 'No application data found.');
+    }
+
+    if (request()->wantsJson() || request()->is('api/*')) {
+        $defaults = [
+            'id' => $applicantData->id,
+            'user_id' => $applicantData->user_id,
+            'applicant_photo' => $applicantData->applicant_photo,
+            'last_name' => $applicantData->last_name,
+            'first_name' => $applicantData->first_name,
+            'middle_name' => $applicantData->middle_name,
+            'maiden_name' => $applicantData->maiden_name,
+            'dob' => $applicantData->dob,
+            'sex' => $applicantData->sex,
+            'place_of_birth' => $applicantData->place_of_birth,
+            'pob_zip_code' => $applicantData->pob_zip_code,
+            'permanent_address' => $applicantData->permanent_address,
+            'zip_code' => $applicantData->zip_code,
+            'citizenship' => $applicantData->citizenship,
+            'tribal_membership' => $applicantData->tribal_membership,
+            'mobile_number' => $applicantData->mobile_number,
+            'email_address' => $applicantData->email_address,
+            'disability_type' => $applicantData->disability_type,
+            'school_name' => $applicantData->school_name,
+            'course' => $applicantData->course,
+            'school_id_number' => $applicantData->school_id_number,
+            'school_address' => $applicantData->school_address,
+            'school_sector' => $applicantData->school_sector,
+            'year_level' => $applicantData->year_level,
+            'father_status' => $applicantData->father_status,
+            'father_name' => $applicantData->father_name,
+            'father_address' => $applicantData->father_address,
+            'father_occupation' => $applicantData->father_occupation,
+            'mother_status' => $applicantData->mother_status,
+            'mother_name' => $applicantData->mother_name,
+            'mother_address' => $applicantData->mother_address,
+            'mother_occupation' => $applicantData->mother_occupation,
+            'total_income' => $applicantData->total_income,
+            'siblings_count' => $applicantData->siblings_count,
+            'has_assistance' => $applicantData->has_assistance,
+            'application_status' => $applicantData->application_status,
+            'admin_remarks' => $applicantData->admin_remarks,
+            'evaluated_by' => $applicantData->evaluated_by,
+            'admin_check_cor' => $applicantData->admin_check_cor,
+            'admin_check_indigency' => $applicantData->admin_check_indigency,
+            'regional_coordinator' => $applicantData->regional_coordinator,
+            'enrollment_proof' => $applicantData->enrollment_proof,
+            'indigency_certificate' => $applicantData->indigency_certificate,
+            'signature_path' => $applicantData->signature_path,
+            'date_accomplished' => $applicantData->date_accomplished,
+            'created_at' => $applicantData->created_at,
+            'updated_at' => $applicantData->updated_at,
+        ];
+
+        $applicationData = array_merge($defaults, $applicantData->toArray());
+
+        array_walk($applicationData, function (&$value) {
+            if ($value === null) {
+                $value = '';
+            }
+        });
+
+        return response()->json([
+            'application' => $applicationData,
+            'review' => $applicantData->latestReview ? $applicantData->latestReview->toArray() : null,
+        ]);
     }
 
     return view('applications.view_form', compact('application', 'applicantData'));
@@ -441,43 +577,15 @@ class ApplicationController extends Controller
     $applicantData = ApplicantData::findOrFail($id);
     $user = auth()->user();
 
-    // --- CASE 1: ADMIN/SECRETARY UPDATING EVALUATION ---
+    // Editing the application is student-only.
     if (in_array($user->role, ['admin', 'secretary'])) {
-        $request->validate([
-            'application_status' => 'nullable|in:pending,approved,rejected',
-            'admin_remarks' => 'nullable|string|max:1000',
-            'admin_check_cor' => 'nullable|boolean',
-            'admin_check_indigency' => 'nullable|boolean',
-            'evaluated_by' => 'nullable|string|max:255',
-            'regional_coordinator' => 'nullable|string|max:255',
-        ]);
-
-        $reviewPayload = [
-            'new_application_status' => $request->application_status ?? $applicantData->application_status,
-            'admin_remarks' => $request->admin_remarks,
-            'evaluated_by' => $request->evaluated_by ?? auth()->user()->name,
-            'admin_check_cor' => (int) $request->input('admin_check_cor', 0),
-            'admin_check_indigency' => (int) $request->input('admin_check_indigency', 0),
-            'regional_coordinator' => $request->regional_coordinator ?? auth()->user()->name,
-        ];
-
-        $latestReview = $applicantData->latestReview;
-        if ($latestReview) {
-            $latestReview->update($reviewPayload);
-            $applicantData->update(['application_status' => $latestReview->new_application_status]);
-        } else {
-            $review = $applicantData->reviews()->create($reviewPayload);
-            $applicantData->update(['application_status' => $review->new_application_status]);
-        }
-
-        if ($request->wantsJson()) {
+        if ($request->wantsJson() || $request->is('api/*')) {
             return response()->json([
-                'message' => 'Application evaluation updated successfully',
-                'data' => $applicantData,
-            ], 200);
+                'message' => 'Application editing is student-only. Use /api/admin/applications/' . $id . '/status to review the application.',
+            ], 403);
         }
 
-        return back()->with('success', 'Application evaluation updated successfully.');
+        abort(403, 'Application editing is student-only. Use the review endpoint instead.');
     }
 
     if ($user->role === 'student') {
@@ -490,43 +598,78 @@ class ApplicationController extends Controller
             return back()->with('error', 'Your application has been ' . $applicantData->application_status . '. You can no longer edit or update it.');
         }
 
-        $request->validate([
-            'last_name' => 'required|string|max:255',
-            'first_name' => 'required|string|max:255',
-            'middle_name' => 'nullable|string|max:255',
-            'maiden_name' => 'nullable|string|max:255',
-            'dob' => 'required|date',
-            'sex' => 'required|in:male,female',
-            'place_of_birth' => 'required|string|max:255',
-            'pob_zip_code' => 'required|string|max:20',
-            'permanent_address' => 'required|string|max:500',
-            'zip_code' => 'required|string|max:20',
-            'mobile_number' => 'required|string|max:20',
-            'email_address' => 'nullable|email|max:255',
-            'school_name' => 'required|string|max:255',
-            'school_id_number' => 'nullable|string|max:255',
-            'course' => 'required|string|max:255',
-            'school_sector' => 'required|in:public,private',
-            'year_level' => 'required|integer|min:1|max:10',
-            'school_address' => 'required|string|max:500',
-            'citizenship' => 'nullable|string|max:255',
-            'total_income' => 'nullable|numeric|min:0',
-            'siblings_count' => 'nullable|integer|min:0',
-            'applicant_photo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-            'indigency_certificate' => 'nullable|mimes:pdf,jpg,jpeg,png|max:5120',
-            'enrollment_proof' => 'nullable|mimes:pdf,jpg,jpeg,png|max:5120',
-            'signature_file' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+        // Validate only the submitted fields so partial updates work over form-data
+        $requestData = $request->except([
+            'applicant_photo', 'indigency_certificate', 'enrollment_proof', 'signature_file'
         ]);
 
-        $applicantData = ApplicantData::firstOrNew(['user_id' => $user->id]);
+        // Build validation rules dynamically - required only if present in the request
+        $rules = [
+            'last_name' => 'sometimes|required|string|max:255',
+            'first_name' => 'sometimes|required|string|max:255',
+            'middle_name' => 'sometimes|nullable|string|max:255',
+            'maiden_name' => 'sometimes|nullable|string|max:255',
+            'dob' => 'sometimes|required|date',
+            'sex' => 'sometimes|required|in:male,female',
+            'place_of_birth' => 'sometimes|required|string|max:255',
+            'pob_zip_code' => 'sometimes|required|string|max:20',
+            'permanent_address' => 'sometimes|required|string|max:500',
+            'zip_code' => 'sometimes|required|string|max:20',
+            'mobile_number' => 'sometimes|required|string|max:20',
+            'email_address' => 'sometimes|nullable|email|unique:applicant_data,email_address,' . $applicantData->id . '|max:255',
+            'school_name' => 'sometimes|required|string|max:255',
+            'school_id_number' => 'sometimes|nullable|string|max:255',
+            'course' => 'sometimes|required|string|max:255',
+            'school_sector' => 'sometimes|required|in:public,private',
+            'year_level' => 'sometimes|required|integer|min:1|max:10',
+            'school_address' => 'sometimes|required|string|max:500',
+            'citizenship' => 'sometimes|nullable|string|max:255',
+            'total_income' => 'sometimes|nullable|numeric|min:0',
+            'siblings_count' => 'sometimes|nullable|integer|min:0',
+        ];
 
-        $data = $request->except([
-            'applicant_photo', 'indigency_certificate', 'enrollment_proof', 'signature_file', 'year_level'
+        // Only validate file fields if they are present in the request
+        if ($request->hasFile('applicant_photo')) {
+            $rules['applicant_photo'] = 'image|mimes:jpg,jpeg,png|max:2048';
+        }
+        if ($request->hasFile('indigency_certificate')) {
+            $rules['indigency_certificate'] = 'mimes:pdf,jpg,jpeg,png|max:5120';
+        }
+        if ($request->hasFile('enrollment_proof')) {
+            $rules['enrollment_proof'] = 'mimes:pdf,jpg,jpeg,png|max:5120';
+        }
+        if ($request->hasFile('signature_file')) {
+            $rules['signature_file'] = 'image|mimes:jpg,jpeg,png|max:2048';
+        }
+
+        // Validate only the request fields using Validator facade
+        $validator = \Illuminate\Support\Facades\Validator::make($requestData, $rules);
+
+        if ($validator->fails()) {
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'message' => $validator->errors()->first(),
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+            return back()->withErrors($validator)->withInput();
+        }
+
+        $data = $applicantData->toArray();
+
+        // Apply submitted request values over existing values.
+        $requestData = $request->except([
+            'applicant_photo', 'indigency_certificate', 'enrollment_proof', 'signature_file'
         ]);
-        $data['course'] = $request->course;
-        $data['year_level'] = $request->year_level;
-        $data['has_assistance'] = ($request->has_other_assistance == 'yes') ? 1 : 0;
-        $data['citizenship'] = $request->citizenship ?? $applicantData->citizenship ?? 'Filipino';
+
+        foreach ($requestData as $key => $value) {
+            $data[$key] = $value;
+        }
+
+        $data['course'] = $request->input('course', $applicantData->course);
+        $data['year_level'] = $request->input('year_level', $applicantData->year_level);
+        $data['has_assistance'] = $request->input('has_other_assistance') === 'yes' ? 1 : $applicantData->has_assistance;
+        $data['citizenship'] = $request->input('citizenship', $applicantData->citizenship ?? 'Filipino');
         $data['date_accomplished'] = $applicantData->date_accomplished ?? now()->format('Y-m-d');
 
         if ($request->hasFile('applicant_photo')) {
@@ -565,7 +708,8 @@ class ApplicationController extends Controller
             $data['signature_path'] = 'uploads/sigs/'.$name;
         }
 
-        $applicantData = ApplicantData::updateOrCreate(['user_id' => $user->id], $data);
+        $applicantData->fill($data);
+        $applicantData->save();
 
         if ($request->has('download')) {
             return $this->downloadPdf();

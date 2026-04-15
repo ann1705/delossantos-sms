@@ -12,6 +12,11 @@ class FormController extends Controller
     public function index()
     {
         $forms = Form::latest()->get();
+
+        if (request()->wantsJson() || request()->is('api/*')) {
+            return response()->json(['forms' => $forms]);
+        }
+
         return view('forms.index', compact('forms'));
     }
 
@@ -26,13 +31,22 @@ class FormController extends Controller
             // This saves to storage/app/public/forms/
             $path = $request->file('file')->store('forms', 'public');
 
-            Form::create([
+            $form = Form::create([
                 'title' => $request->title,
                 'file_path' => $path,
             ]);
 
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json(['message' => 'Form uploaded successfully!', 'form' => $form], 201);
+            }
+
             return back()->with('success', 'Form uploaded successfully!');
         }
+
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json(['message' => 'No file selected.'], 422);
+        }
+
         return back()->with('error', 'No file selected.');
     }
 
@@ -65,6 +79,9 @@ class FormController extends Controller
 
         // Error fallback
         Log::error("Download failed. Physical file missing at: " . storage_path('app/public/' . $relativeWeight));
+        if (request()->wantsJson() || request()->is('api/*')) {
+            return response()->json(['message' => 'Sorry, the file does not exist on the server disk.'], 404);
+        }
         return back()->with('error', 'Sorry, the file does not exist on the server disk.');
     }
 
@@ -79,6 +96,10 @@ class FormController extends Controller
 
         // Delete DB record
         $form->delete();
+
+        if (request()->wantsJson() || request()->is('api/*')) {
+            return response()->json(['message' => 'Form and associated file deleted.']);
+        }
 
         return back()->with('success', 'Form and associated file deleted.');
     }

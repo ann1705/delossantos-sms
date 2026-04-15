@@ -79,21 +79,25 @@ class ProfileController extends Controller
 
     public function destroy(Request $request)
     {
+        /** @var \App\Models\User $user */ // This type-hinting helps IDEs and static analysis
         $user = Auth::user();
 
         $request->validate([
             'password' => ['required', 'current_password'],
         ]);
 
-        $user->delete();
-
         if ($request->wantsJson() || $request->is('api/*')) {
-            // For API: revoke all tokens
+            // Fix for Line 88 (revoking tokens before deletion)
             $user->tokens()->delete();
+
+            // Fix for Line 92 (ensuring delete() works on the model instance)
+            $user->delete();
+
             return response()->json(['message' => 'Your account has been deleted successfully.']);
         }
 
         // For web: logout and invalidate session
+        $user->delete(); // Delete the user for web requests too
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

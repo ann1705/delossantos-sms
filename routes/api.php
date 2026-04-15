@@ -14,8 +14,11 @@ use Illuminate\Support\Facades\Route;
 
 // Public routes in API
 Route::get('/', function () {
-    return view('welcome');
-})->name('home');
+    return response()->json([
+        'message' => 'API is running. Use /api/login, /api/register, and other /api endpoints.',
+        'status' => 'ok',
+    ], 200);
+})->name('api.home');
 
 Route::get('/forms', [FormController::class, 'index'])->name('forms.index');
 
@@ -72,25 +75,15 @@ Route::post('/forgot-password', function (Request $request) {
         'email.exists' => 'No account found with this email',
     ]);
 
-    // Generate a random 6-digit code
-    $resetCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+    $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
-    // Store in cache with 60 minute expiry
-    Cache::put('password_reset_code:' . $request->email, $resetCode, now()->addMinutes(60));
-
-    // Send email with reset code
-    try {
-        Mail::to($request->email)->send(new PasswordResetMail($request->email, $resetCode));
-    } catch (\Exception $e) {
-        return response()->json([
-            'message' => 'Failed to send reset code email',
-            'error' => $e->getMessage(),
-        ], 500);
-    }
+    Cache::put('password_reset_code:' . $request->email, $code, now()->addMinutes(30));
 
     return response()->json([
-        'message' => 'Reset code sent to your email. Check your inbox or spam folder.',
-    ]);
+        'message' => 'Password reset code generated successfully.',
+        'reset_code' => $code,
+        'expires_in_minutes' => 30,
+    ], 200);
 });
 
 // Verify Reset Code
@@ -123,7 +116,7 @@ Route::post('/verify-code', function (Request $request) {
     ]);
 });
 
-// Reset Password
+// Reset Password with token
 Route::post('/reset-password', function (Request $request) {
     $request->validate([
         'email' => 'required|email|exists:users,email',
@@ -144,7 +137,7 @@ Route::post('/reset-password', function (Request $request) {
         'password' => Hash::make($request->password),
     ]);
 
-    // Clear the reset token
+    // Clear the reset token and code
     Cache::forget('password_reset_token:' . $request->email);
     Cache::forget('password_reset_code:' . $request->email);
 
@@ -159,30 +152,16 @@ Route::middleware('auth:sanctum')->group(function () {
         $request->user()->currentAccessToken()->delete();
         return response()->json(['message' => 'Logged out']);
     });
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
 
     Route::get('/applications/view/{id}', [ApplicationController::class, 'show'])->name('applications.show');
-    Route::get('/dashboard', [ApplicationController::class, 'studentDashboard'])->name('student.dashboard');
-    Route::get('/applications/create', [ApplicationController::class, 'create'])->name('applications.create');
-    Route::get('/applications/apply', [ApplicationController::class, 'create'])->name('applications.create');
-
-    Route::get('/student/dashboard', function () {
-        return view('student.dashboard');
-    })->name('student.dashboard');
-
     Route::get('/my-application/view', [ApplicationController::class, 'viewForm'])->name('applications.view_form');
     Route::get('/my-application/pdf', [ApplicationController::class, 'downloadPdf'])->name('applications.view_form.pdf');
 
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::match(['put', 'patch'], '/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::post('/profile/delete', [ProfileController::class, 'destroy']);
 
-    Route::get('/applications/apply', [ApplicationController::class, 'create'])->name('applications.create');
     Route::post('/applications/store', [ApplicationController::class, 'store'])->name('applications.store');
-    Route::get('/applications/success', [ApplicationController::class, 'success'])->name('applications.success');
     Route::match(['post', 'put'], '/applications/{id}', [ApplicationController::class, 'update'])->name('applications.update');
     Route::delete('/applications/{id}', [ApplicationController::class, 'destroy'])->name('applications.destroy');
 
@@ -190,11 +169,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('admin')->middleware('can:admin-or-secretary')->group(function () {
         Route::get('/registry', [ApplicationController::class, 'index'])->name('admin.registry');
-        Route::get('/applications/manage', [ApplicationController::class, 'manage'])->name('admin.applications.manage');
         Route::get('/applications/{id}', [ApplicationController::class, 'show'])->name('admin.applications.show');
-        Route::get('/applications/{id}/edit', [ApplicationController::class, 'edit'])->name('admin.applications.edit');
         Route::get('/applications/{id}/pdf', [ApplicationController::class, 'downloadAdminPdf'])->name('admin.applications.pdf');
-        Route::put('/applications/{id}', [ApplicationController::class, 'update'])->name('admin.applications.update');
         Route::put('/applications/{id}/status', [ApplicationController::class, 'updateStatus'])->name('admin.applications.status');
         Route::delete('/applications/{id}', [ApplicationController::class, 'adminDestroy'])->name('admin.applications.destroy');
     });
@@ -213,11 +189,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/forms/{id}', [FormController::class, 'destroy'])->name('admin.forms.destroy');
     });
 });
-
-// This route is included outside auth in original web
-Route::get('/register', function () {
-    return view('your_custom_register_file_name');
-})->name('register');
 
 Route::middleware('auth:sanctum')->get('/debug-user', function (Request $request) {
     return response()->json($request->user());
