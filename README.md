@@ -25,16 +25,17 @@ Follow these steps to set up the project locally from the GitHub repository.
    composer install
    ```
 
-3. **Install Node.js Dependencies**
-   ```bash
-   npm install
-   ```
 
 4. **Environment Configuration**
    - Copy the `.env.example` file to `.env`:
      ```bash
      cp .env.example .env
      ```
+
+ 5. **Generate Application Key**
+   ```bash
+   php artisan key:generate
+   ```
    - Update the `.env` file with your database credentials and other settings:
      ```
      DB_CONNECTION=mysql
@@ -44,20 +45,7 @@ Follow these steps to set up the project locally from the GitHub repository.
      DB_USERNAME=your_username
      DB_PASSWORD=your_password
 
-     MAIL_MAILER=smtp
-     MAIL_HOST=your_smtp_host
-     MAIL_PORT=587
-     MAIL_USERNAME=your_email@example.com
-     MAIL_PASSWORD=your_email_password
-     MAIL_ENCRYPTION=tls
-     MAIL_FROM_ADDRESS=your_email@example.com
-     MAIL_FROM_NAME="${APP_NAME}"
-     ```
-
-5. **Generate Application Key**
-   ```bash
-   php artisan key:generate
-   ```
+     
 
 6. **Database Setup**
    - Create a database in your MySQL server
@@ -70,12 +58,7 @@ Follow these steps to set up the project locally from the GitHub repository.
      php artisan db:seed
      ```
 
-7. **Build Assets**
-   ```bash
-   npm run build
-   ```
-
-8. **Serve the Application**
+7. **Serve the Application**
    ```bash
    php artisan serve
    ```
